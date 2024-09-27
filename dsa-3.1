@@ -1,0 +1,187 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+typedef struct Node {
+ char name[100];
+ struct Node* next;
+} Node;
+Node* head = NULL;
+// Function prototypes
+void create_list();
+void insert_contact(char* name, int position);
+void delete_contact(int method, char* name_or_position);
+void traverse();
+void search_contact(char* name);
+void display_contacts();
+int main() {
+ int choice;
+ char name[100];
+ int position;
+ while (1) {
+ printf("\nMenu:\n");
+ printf("1. Create contact list\n");
+ printf("2. Insert new contact\n");
+ printf("3. Delete contact\n");
+ printf("4. Traverse contacts\n");
+ printf("5. Search for a contact\n");
+ printf("6. Exit\n");
+ printf("Choose an option: ");
+ scanf("%d", &choice);
+ getchar(); // Consume newline
+ switch (choice) {
+ case 1:
+ create_list();
+ break;
+ case 2:
+ printf("Enter contact name: ");
+ fgets(name, sizeof(name), stdin);
+ name[strcspn(name, "\n")] = 0; // Remove newline
+ printf("Enter position to insert at (0-based): ");
+ scanf("%d", &position);
+ insert_contact(name, position);
+ break;
+ case 3:
+ printf("Delete by (1) name or (2) position? ");
+ scanf("%d", &choice);
+ getchar(); // Consume newline
+ if (choice == 1) {
+ printf("Enter contact name: ");
+ fgets(name, sizeof(name), stdin);
+ name[strcspn(name, "\n")] = 0; // Remove newline
+ delete_contact(1, name);
+ } else {
+ printf("Enter position (0-based): ");
+ scanf("%d", &position);
+ delete_contact(2, NULL);
+ }
+ break;
+ case 4:
+ traverse();
+ break;
+ case 5:
+ printf("Enter contact name to search: ");
+ fgets(name, sizeof(name), stdin);
+ name[strcspn(name, "\n")] = 0; // Remove newline
+ search_contact(name);
+ break;
+ case 6:
+ printf("Exiting.\n");
+ exit(0);
+ default:
+ printf("Invalid option.\n");
+ }
+ }
+}
+void create_list() {
+ printf("Enter names (type 'done' to finish):\n");
+ while (1) {
+ char name[100];
+ printf("Name: ");
+ fgets(name, sizeof(name), stdin);
+ name[strcspn(name, "\n")] = 0; // Remove newline
+ if (strcmp(name, "done") == 0) break;
+ insert_contact(name, 0); // Insert at the beginning
+ }
+ display_contacts();
+}
+void insert_contact(char* name, int position) {
+ Node* new_node = malloc(sizeof(Node));
+ strcpy(new_node->name, name);
+ new_node->next = NULL;
+ if (position == 0) {
+ new_node->next = head;
+ head = new_node;
+ display_contacts();
+ return;
+ }
+ Node* current = head;
+ for (int i = 0; current && i < position - 1; i++)
+ current = current->next;
+ if (!current) {
+ printf("Position out of bounds.\n");
+ free(new_node);
+ return;
+ }
+ new_node->next = current->next;
+ current->next = new_node;
+ display_contacts();
+}
+void delete_contact(int method, char* name_or_position) {
+ if (!head) {
+ printf("List is empty.\n");
+ return;
+ }
+ if (method == 1) { // By name
+ char name[100];
+ strcpy(name, name_or_position);
+ if (strcmp(head->name, name) == 0) {
+ Node* temp = head;
+ head = head->next;
+ free(temp);
+ display_contacts();
+ return;
+ }
+ Node* current = head;
+ while (current->next) {
+ if (strcmp(current->next->name, name) == 0) {
+ Node* to_delete = current->next;
+ current->next = to_delete->next;
+ free(to_delete);
+ display_contacts();
+ return;
+ }
+ current = current->next;
+ }
+ printf("Name not found.\n");
+ } else { // By position
+ int position = atoi(name_or_position);
+ if (position == 0) {
+ Node* temp = head;
+ head = head->next;
+ free(temp);
+ display_contacts();
+ return;
+ }
+ Node* current = head;
+ for (int i = 0; current && i < position - 1; i++)
+ current = current->next;
+ if (!current || !current->next) {
+ printf("Position out of bounds.\n");
+ return;
+ }
+ Node* to_delete = current->next;
+ current->next = to_delete->next;
+ free(to_delete);
+ display_contacts();
+ }
+}
+void traverse() {
+ display_contacts();
+}
+void search_contact(char* name) {
+ Node* current = head;
+ int position = 0;
+ while (current) {
+ if (strcmp(current->name, name) == 0) {
+ printf("Contact '%s' found at position %d.\n", name, position);
+ return;
+ }
+ current = current->next;
+ position++;
+ }
+ printf("Contact '%s' not found.\n", name);
+}
+void display_contacts() {
+ if (!head) {
+ printf("Contact list is empty.\n");
+ return;
+ }
+ Node* current = head;
+ printf("Current contacts: ");
+ while (current) {
+ printf("%s", current->name);
+ if (current->next) printf(" -> ");
+ current = current->next;
+ }
+ printf("\n");
+}
